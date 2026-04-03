@@ -512,6 +512,12 @@
 
 - (void)webView:(WKWebView*)theWebView didFailNavigation:(WKNavigation*)navigation withError:(NSError*)error
 {
+    // Check if the error is a navigation cancellation (-999).
+    // If so, do nothing and return immediately.
+    if (error.code == NSURLErrorCancelled) {
+        return;
+    }
+
     NSString* message = [NSString stringWithFormat:@"Failed to load webpage with error: %@", [error localizedDescription]];
     NSLog(@"%@", message);
 

@@ -37,3 +37,6 @@ npm-debug.log
 # ASF release workspace
 .asf-release/
 !.asf-release/.gitkeep
+
+# IntelliJ IDEA files
+**/.idea/**/*
