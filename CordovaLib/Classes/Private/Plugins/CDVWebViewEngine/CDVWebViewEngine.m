@@ -170,6 +170,8 @@
 - (void)pluginInitialize
 {
     CDVSettingsDictionary* settings = self.commandDelegate.settings;
+    
+    self.timeoutInterval = [settings cordovaFloatSettingForKey:@"LoadUrlTimeoutValue" defaultValue:20000.0] / 1000.0;
 
     NSString *scheme = self.viewController.appScheme;
 
@@ -493,25 +495,68 @@
     }
 }
 
+#pragma mark - Timer Management
+
+- (void)startLoadingTimer {
+    // Invalidate any existing timer
+    [self.loadingTimer invalidate];
+    
+    // Create and schedule a new timer
+    __weak id weakSelf = self;
+    self.loadingTimer = [NSTimer scheduledTimerWithTimeInterval:self.timeoutInterval
+                                                       repeats:NO
+                                                         block:^(NSTimer * _Nonnull timer) {
+        [weakSelf handleTimeout];
+    }];
+}
+
+- (void)stopLoadingTimer {
+    [self.loadingTimer invalidate];
+    self.loadingTimer = nil;
+}
+
+- (void)handleTimeout {
+    WKWebView* wkWebView = (WKWebView*)_engineWebView;
+    [wkWebView stopLoading];
+    NSLog(@"WKWebView navigation timed out!");
+    
+    // Create an NSError object for a timeout
+    NSDictionary *userInfo = @{
+        NSLocalizedDescriptionKey: NSLocalizedString(@"The request timed out.", nil),
+        NSLocalizedFailureReasonErrorKey: NSLocalizedString(@"The network connection took too long to complete.", nil)
+    };
+    
+    NSError *timeoutError = [NSError errorWithDomain:NSURLErrorDomain
+                                                code:NSURLErrorTimedOut
+                                            userInfo:userInfo];
+    
+    // Call the delegate method with the custom error
+    [self webView:wkWebView didFailNavigation:nil withError:timeoutError];
+}
+
 #pragma mark - WKNavigationDelegate implementation
 
 - (void)webView:(WKWebView*)webView didStartProvisionalNavigation:(WKNavigation*)navigation
 {
+    [self startLoadingTimer];
     [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:CDVPluginResetNotification object:webView]];
 }
 
 - (void)webView:(WKWebView*)webView didFinishNavigation:(WKNavigation*)navigation
 {
+    [self stopLoadingTimer];
     [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:CDVPageDidLoadNotification object:webView]];
 }
 
 - (void)webView:(WKWebView*)theWebView didFailProvisionalNavigation:(WKNavigation*)navigation withError:(NSError*)error
 {
+    [self stopLoadingTimer];
     [self webView:theWebView didFailNavigation:navigation withError:error];
 }
 
 - (void)webView:(WKWebView*)theWebView didFailNavigation:(WKNavigation*)navigation withError:(NSError*)error
 {
+    [self stopLoadingTimer];
     // Check if the error is a navigation cancellation (-999).
     // If so, do nothing and return immediately.
     if (error.code == NSURLErrorCancelled) {

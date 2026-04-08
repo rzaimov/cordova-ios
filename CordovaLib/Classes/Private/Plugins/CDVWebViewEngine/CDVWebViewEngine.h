@@ -23,6 +23,8 @@
 @interface CDVWebViewEngine : CDVPlugin <CDVWebViewEngineProtocol, WKScriptMessageHandler, WKNavigationDelegate>
 
 @property (nonatomic, strong, readonly) id <WKUIDelegate> uiDelegate;
+@property (nonatomic, strong) NSTimer *loadingTimer;
+@property (nonatomic, assign) NSTimeInterval timeoutInterval;
 
 - (void)allowsBackForwardNavigationGestures:(CDVInvokedUrlCommand*)command;
 
