@@ -569,6 +569,12 @@
     }
 #endif
 
+    NSURL* url = [request URL];
+    NSString *scheme = url.scheme;
+    if (navigationAction.targetFrame != nil && !navigationAction.targetFrame.mainFrame && ([scheme isEqualToString:@"http"] || [scheme isEqualToString:@"https"])) {
+        return decisionHandler(WKNavigationActionPolicyAllow);
+    }
+
     // Give plugins the chance to handle the url, as long as this WebViewEngine is still the WKNavigationDelegate.
     // This allows custom delegates to choose to call this method for `default` cordova behavior without querying all plugins.
     if (webView.navigationDelegate == self) {
