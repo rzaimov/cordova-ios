@@ -40,6 +40,7 @@
 @interface CDVWebViewEngine ()
 
 @property (nonatomic, strong, readwrite) UIView* engineWebView;
+@property (nonatomic, strong, readwrite) id <WKUIDelegate> uiDelegate;
 @property (nonatomic, readwrite) NSString *CDV_ASSETS_URL;
 @property (nonatomic, readwrite) Boolean cdvIsFileScheme;
 @property (nullable, nonatomic, strong, readwrite) WKWebViewConfiguration *configuration;
@@ -280,7 +281,9 @@
         uiDelegate.mediaPermissionGrantType = [self parsePermissionGrantType:[settings cordovaSettingForKey:@"MediaPermissionGrantType"]];
         uiDelegate.allowNewWindows = [settings cordovaBoolSettingForKey:@"AllowNewWindows" defaultValue:NO];
 
-        wkWebView.UIDelegate = uiDelegate;
+        // Keep a strong reference on 'self' so ARC doesn't destroy it
+        self.uiDelegate = uiDelegate;
+        wkWebView.UIDelegate = self.uiDelegate;
     }
 
     if ([self.viewController conformsToProtocol:@protocol(WKNavigationDelegate)]) {
@@ -429,7 +432,9 @@
     }
 
     if (uiDelegate && [uiDelegate conformsToProtocol:@protocol(WKUIDelegate)]) {
-        wkWebView.UIDelegate = uiDelegate;
+        // Keep a strong reference on 'self' so ARC doesn't destroy it
+        self.uiDelegate = uiDelegate;
+        wkWebView.UIDelegate = self.uiDelegate;
     }
 
     if (settings && [settings isKindOfClass:[CDVSettingsDictionary class]]) {
