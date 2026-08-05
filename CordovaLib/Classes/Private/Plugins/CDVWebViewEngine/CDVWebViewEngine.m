@@ -647,9 +647,7 @@
     }
 #endif
 
-    NSURL* url = [request URL];
-    NSString *scheme = url.scheme;
-    if (navigationAction.targetFrame != nil && !navigationAction.targetFrame.mainFrame && ([scheme isEqualToString:@"http"] || [scheme isEqualToString:@"https"])) {
+    if (navigationAction.targetFrame != nil && !navigationAction.targetFrame.mainFrame) {
         return decisionHandler(WKNavigationActionPolicyAllow);
     }
 
